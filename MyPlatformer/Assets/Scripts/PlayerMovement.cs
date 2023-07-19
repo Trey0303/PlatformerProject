@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public int speed = 6;
+    public int maximumSpeed = 6;
     public float rotationSpeed = 750;
     public float jumpSpeed = 12;
     public float jumpButtonGracePeriod = .2f;
@@ -21,6 +21,10 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         animator = GetComponent<Animator>();
+        if(animator == null || animator.isActiveAndEnabled == false)
+        {
+            Debug.Log("either the animator component is NOT enabled OR there is no animator component attached to THIS gameObject");
+        }
         characterController = GetComponent<CharacterController>();//this will grab the unity character controller component that is attached to the player
         //originalstepOffset = characterController.stepOffset;//for a weird unity controller bug (might be fixed)
     }
@@ -28,14 +32,22 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        ////player walking movement
+        ////player walking/running movement
 
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
 
         Vector3 movementDirection = new Vector3(horizontalInput, 0, verticalInput);
-        float magnitude = movementDirection.magnitude;// allows player to move slower if not fully pushing the controller stick in any direction
-        magnitude = Mathf.Clamp01(magnitude) * speed;//makes sure magnitude is never over 1
+        float inputMagnitude = Mathf.Clamp01(movementDirection.magnitude);// helps prevent player from moving faster diagonally
+        
+        if(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))//sets an input so that is possible to walk using a keyboard
+        {
+            inputMagnitude /= 2;// make player move at half the speed
+        }
+        
+        animator.SetFloat("InputMagnitude", inputMagnitude);
+        
+        float speed = inputMagnitude * maximumSpeed;//sets player movement speed
         movementDirection.Normalize();//helps prevent the player from moving faster(having a magnitude over 1) than intended when walking diagonally
 
         ////player jump
@@ -44,14 +56,14 @@ public class PlayerMovement : MonoBehaviour
         if (characterController.isGrounded)
         {
             lastGroundedTime = Time.time;
-            if(animator.GetBool("Grounded") != true)
+            if(animator != null && animator.GetBool("Grounded") != true)
             {
                 animator.SetBool("Grounded", true);
             }
         }
         else
         {
-            if (animator.GetBool("Grounded") == true)
+            if (animator != null && animator.GetBool("Grounded") == true)
             {
                 animator.SetBool("Grounded", false);
             }
@@ -69,7 +81,10 @@ public class PlayerMovement : MonoBehaviour
             if (Time.time - jumpButtonPressedTime <= jumpButtonGracePeriod)
             {
                 //characterController.stepOffset = originalstepOffset;//for a unity controller bug
-                animator.SetTrigger("Jump");
+                if(animator != null)
+                {
+                    animator.SetTrigger("Jump");
+                }
                 ySpeed = jumpSpeed;
                 jumpButtonPressedTime = null;
                 lastGroundedTime = null;
@@ -81,7 +96,7 @@ public class PlayerMovement : MonoBehaviour
         //}
 
         //player velocity (adding player movement with jumping into Vector3 velocity)
-        Vector3 velocity = movementDirection * magnitude;
+        Vector3 velocity = movementDirection * speed;
         velocity.y = ySpeed;
 
         characterController.Move(velocity * Time.deltaTime);//NOTE: dont need to multiply by deltaTime b/c its already accounted for in the SimpleMove method
@@ -89,7 +104,10 @@ public class PlayerMovement : MonoBehaviour
         ////player movement rotation
         if(movementDirection != Vector3.zero)//checks if player is moving
         {
-            animator.SetBool("Running", true);
+            if (animator != null)
+            {
+                animator.SetBool("Running", true);
+            }
 
             ////rotation with movement direction
 
@@ -101,7 +119,10 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            animator.SetBool("Running", false);
+            if (animator != null)
+            {
+                animator.SetBool("Running", false);
+            }
         }
     }
 }
