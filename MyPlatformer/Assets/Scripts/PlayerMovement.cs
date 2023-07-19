@@ -1,13 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
-    public int maximumSpeed = 6;
-    public float rotationSpeed = 750;
-    public float jumpSpeed = 12;
-    public float jumpButtonGracePeriod = .2f;
+    [SerializeField]
+    private int maximumSpeed = 6;
+    [SerializeField]
+    private float rotationSpeed = 750;
+    [SerializeField]
+    private float jumpSpeed = 12;
+    [SerializeField]
+    private float jumpButtonGracePeriod = .2f;
+    [SerializeField]
+    private Transform cameraTransform;
 
     private Animator animator;
     private CharacterController characterController;//handles most of the difficult math problems for me...
@@ -16,6 +22,26 @@ public class PlayerMovement : MonoBehaviour
     private float gravityMultiplier = 3;
     private float? lastGroundedTime;//question mark means that this float can either be null or have an actual value
     private float? jumpButtonPressedTime;
+
+    ////NEW INPUT SYSTEM
+
+    [SerializeField]
+    private InputActionReference movementControl;
+    [SerializeField]
+    private InputActionReference jumpControl;
+
+    private void OnEnable()
+    {
+        movementControl.action.Enable();
+        jumpControl.action.Enable();
+    }
+
+    private void OnDisable()
+    {
+        movementControl.action.Disable();
+        jumpControl.action.Disable();
+    }
+
 
     // Start is called before the first frame update
     void Start()
@@ -27,6 +53,11 @@ public class PlayerMovement : MonoBehaviour
         }
         characterController = GetComponent<CharacterController>();//this will grab the unity character controller component that is attached to the player
         //originalstepOffset = characterController.stepOffset;//for a weird unity controller bug (might be fixed)
+
+        if(cameraTransform == null)
+        {
+            Debug.Log("Player Camera not attached to THIS script");
+        }
     }
 
     // Update is called once per frame
@@ -34,20 +65,26 @@ public class PlayerMovement : MonoBehaviour
     {
         ////player walking/running movement
 
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
+        //float horizontalInput = Input.GetAxis("Horizontal");
+        //float verticalInput = Input.GetAxis("Vertical");
 
-        Vector3 movementDirection = new Vector3(horizontalInput, 0, verticalInput);
+        Vector2 newMovementInputSystemControl = movementControl.action.ReadValue<Vector2>();//gets NEW input system controls
+        Vector3 movementDirection = new Vector3(newMovementInputSystemControl.x, 0, newMovementInputSystemControl.y);
         float inputMagnitude = Mathf.Clamp01(movementDirection.magnitude);// helps prevent player from moving faster diagonally
         
-        if(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))//sets an input so that is possible to walk using a keyboard
-        {
-            inputMagnitude /= 2;// make player move at half the speed
-        }
+        //if(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))//sets an input so that is possible to walk using a keyboard
+        //{
+        //    inputMagnitude /= 2;// make player move at half the speed
+        //}
         
-        animator.SetFloat("InputMagnitude", inputMagnitude);
+        animator.SetFloat("InputMagnitude", inputMagnitude, 0.05f, Time.deltaTime);//0.05 is for damping (to make animation transitions smoother)
         
         float speed = inputMagnitude * maximumSpeed;//sets player movement speed
+        if(cameraTransform != null)
+        {
+            movementDirection = Quaternion.AngleAxis(cameraTransform.rotation.eulerAngles.y, Vector3.up) * movementDirection;//CAMERA stuff
+
+        }
         movementDirection.Normalize();//helps prevent the player from moving faster(having a magnitude over 1) than intended when walking diagonally
 
         ////player jump
@@ -69,7 +106,7 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (Input.GetButtonDown("Jump"))
+        if (jumpControl.action.triggered)
         {
             jumpButtonPressedTime = Time.time;
         }
@@ -125,4 +162,17 @@ public class PlayerMovement : MonoBehaviour
             }
         }
     }
+
+    private void OnApplicationFocus(bool focus)
+    {
+        if (focus)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+        }
+    }
+
 }
