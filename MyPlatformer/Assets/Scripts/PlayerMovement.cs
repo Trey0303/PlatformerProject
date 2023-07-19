@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public int speed = 5;
+    public int speed = 6;
     public float rotationSpeed = 750;
     public float jumpSpeed = 12;
     public float jumpButtonGracePeriod = .2f;
 
-
+    private Animator animator;
     private CharacterController characterController;//handles most of the difficult math problems for me...
     //private float originalstepOffset;//used for a bug that the character controller might have that causes weird collision when jumping into walls (bug might have been fixed)
     private float ySpeed;
@@ -20,6 +20,7 @@ public class PlayerMovement : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        animator = GetComponent<Animator>();
         characterController = GetComponent<CharacterController>();//this will grab the unity character controller component that is attached to the player
         //originalstepOffset = characterController.stepOffset;//for a weird unity controller bug (might be fixed)
     }
@@ -43,7 +44,19 @@ public class PlayerMovement : MonoBehaviour
         if (characterController.isGrounded)
         {
             lastGroundedTime = Time.time;
+            if(animator.GetBool("Grounded") != true)
+            {
+                animator.SetBool("Grounded", true);
+            }
         }
+        else
+        {
+            if (animator.GetBool("Grounded") == true)
+            {
+                animator.SetBool("Grounded", false);
+            }
+        }
+
         if (Input.GetButtonDown("Jump"))
         {
             jumpButtonPressedTime = Time.time;
@@ -56,6 +69,7 @@ public class PlayerMovement : MonoBehaviour
             if (Time.time - jumpButtonPressedTime <= jumpButtonGracePeriod)
             {
                 //characterController.stepOffset = originalstepOffset;//for a unity controller bug
+                animator.SetTrigger("Jump");
                 ySpeed = jumpSpeed;
                 jumpButtonPressedTime = null;
                 lastGroundedTime = null;
@@ -75,6 +89,8 @@ public class PlayerMovement : MonoBehaviour
         ////player movement rotation
         if(movementDirection != Vector3.zero)//checks if player is moving
         {
+            animator.SetBool("Running", true);
+
             ////rotation with movement direction
 
             //Space.World seems neccessary for player rotation to work properly with movement direction
@@ -82,6 +98,10 @@ public class PlayerMovement : MonoBehaviour
 
             transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, rotationSpeed  * Time.deltaTime);
 
+        }
+        else
+        {
+            animator.SetBool("Running", false);
         }
     }
 }

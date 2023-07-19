@@ -302,7 +302,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49b79f350d48d0f4688c88cabcb94df5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 5
+  speed: 6
   rotationSpeed: 750
   jumpSpeed: 12
   jumpButtonGracePeriod: 0.2
