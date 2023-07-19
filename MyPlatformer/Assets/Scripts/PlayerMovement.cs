@@ -29,17 +29,21 @@ public class PlayerMovement : MonoBehaviour
     private InputActionReference movementControl;
     [SerializeField]
     private InputActionReference jumpControl;
+    [SerializeField]
+    private InputActionReference walkButton;
 
     private void OnEnable()
     {
         movementControl.action.Enable();
         jumpControl.action.Enable();
+        walkButton.action.Enable();
     }
 
     private void OnDisable()
     {
         movementControl.action.Disable();
         jumpControl.action.Disable();
+        walkButton.action.Disable();
     }
 
 
@@ -65,18 +69,16 @@ public class PlayerMovement : MonoBehaviour
     {
         ////player walking/running movement
 
-        //float horizontalInput = Input.GetAxis("Horizontal");
-        //float verticalInput = Input.GetAxis("Vertical");
-
         Vector2 newMovementInputSystemControl = movementControl.action.ReadValue<Vector2>();//gets NEW input system controls
         Vector3 movementDirection = new Vector3(newMovementInputSystemControl.x, 0, newMovementInputSystemControl.y);
         float inputMagnitude = Mathf.Clamp01(movementDirection.magnitude);// helps prevent player from moving faster diagonally
-        
-        //if(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))//sets an input so that is possible to walk using a keyboard
-        //{
-        //    inputMagnitude /= 2;// make player move at half the speed
-        //}
-        
+
+        if (walkButton.action.IsPressed())//sets an input so that is possible to walk using a keyboard
+        {
+            inputMagnitude /= 2;// make player move at half the speed
+            Debug.Log("walk");
+        }
+
         animator.SetFloat("InputMagnitude", inputMagnitude, 0.05f, Time.deltaTime);//0.05 is for damping (to make animation transitions smoother)
         
         float speed = inputMagnitude * maximumSpeed;//sets player movement speed
@@ -88,6 +90,7 @@ public class PlayerMovement : MonoBehaviour
         movementDirection.Normalize();//helps prevent the player from moving faster(having a magnitude over 1) than intended when walking diagonally
 
         ////player jump
+
         ySpeed += Physics.gravity.y * Time.deltaTime * gravityMultiplier;//this add the players jump speed to gravity and also controls how stong gravity is
 
         if (characterController.isGrounded)
@@ -106,9 +109,10 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (jumpControl.action.triggered)
+        if (jumpControl.action.triggered)//jump input
         {
             jumpButtonPressedTime = Time.time;
+            
         }
 
         if (Time.time - lastGroundedTime <= jumpButtonGracePeriod)
