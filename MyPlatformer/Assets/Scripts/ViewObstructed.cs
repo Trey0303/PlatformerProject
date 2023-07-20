@@ -2,13 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// this script helps prevent walls from getting in the way of keeping the character in view
+/// </summary>
+
 public class ViewObstructed : MonoBehaviour
 {
     public Transform[] obstructions;
     public Transform player;
-    float zoomSpeed = 2f;
+    public Transform playerCamera;
 
-    private int oldHitsNumber;
+    public int oldHitsNumber;
 
     // Start is called before the first frame update
     void Start()
@@ -17,7 +21,7 @@ public class ViewObstructed : MonoBehaviour
     }
 
     // Update is called once per frame
-    void LateUpdate()
+    void Update()
     {
         ObstructedView();
     }
@@ -25,10 +29,10 @@ public class ViewObstructed : MonoBehaviour
     void ObstructedView()
     {
 
-        float characterDistance = Vector3.Distance(transform.position, player.transform.position);
+        float characterDistance = Vector3.Distance(playerCamera.transform.position, player.transform.position);
         int layerNumber = LayerMask.NameToLayer("Wall");
         int layerMask = 1 << layerNumber;
-        RaycastHit[] hits = Physics.RaycastAll(transform.position, player.position - transform.position, characterDistance, layerMask);
+        RaycastHit[] hits = Physics.RaycastAll(playerCamera.transform.position, player.position - playerCamera.transform.position, characterDistance, layerMask);
         if (hits.Length > 0)
         {   // Means that some stuff is blocking the view
             int newHits = hits.Length - oldHitsNumber;
