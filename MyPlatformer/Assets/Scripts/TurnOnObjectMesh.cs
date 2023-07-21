@@ -15,7 +15,7 @@ public class TurnOnObjectMesh : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Wall") && other.gameObject.GetComponent<MeshRenderer>().shadowCastingMode != UnityEngine.Rendering.ShadowCastingMode.On)
         {
-            Debug.Log(other);
+            //Debug.Log(other);
             other.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
         }
     }
