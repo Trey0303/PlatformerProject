@@ -11,3 +11,4 @@ resources used to build this project together:
 - https://www.youtube.com/watch?v=ImuCx_XVaEQ&t=744s(new input system implementation)
 - https://www.youtube.com/watch?v=DMUZfVSYJfs&t=514s (new input system explanation)
 - https://forum.unity.com/threads/make-object-wall-see-through-when-player-is-behind-it.387189/ (preventing camera view from being obstructed)
+- https://docs.unity3d.com/Packages/com.unity.cinemachine@2.6/api/Cinemachine.CinemachineVirtualCamera.html#seealso (cinemachine ForceCamerPosition)
