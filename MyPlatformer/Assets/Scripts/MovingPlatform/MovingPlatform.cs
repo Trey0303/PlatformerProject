@@ -18,7 +18,11 @@ public class MovingPlatform : MonoBehaviour
     private float _timeToWaypoint;//time it will take to get to the next waypoint
     private float _elapsedTime;
 
-    private Vector3 originalPlayerScale;
+
+    private void OnDrawGizmosSelected()
+    {
+        _waypointPath.DrawWaypointGizmos();
+    }
 
     // Start is called before the first frame update
     void Start()
