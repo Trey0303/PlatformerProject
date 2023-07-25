@@ -25,6 +25,8 @@ public class PlayerMovement : MonoBehaviour
     private float ySpeed;
     private float? lastGroundedTime;//question mark means that this float can either be null or have an actual value
     private float? jumpButtonPressedTime;
+    private bool isSliding;
+    private Vector3 slopeSlideVelocity;
 
     ////NEW INPUT SYSTEM
 
@@ -102,6 +104,12 @@ public class PlayerMovement : MonoBehaviour
 
         ySpeed += gravity * Time.deltaTime ;//this add the players jump speed to gravity 
 
+        SetSlopeSlideVelocity();//check if player is standing on a steep slope
+        if(slopeSlideVelocity == Vector3.zero)
+        {
+            isSliding = false;
+        }
+
         if (characterController.isGrounded)
         {
             lastGroundedTime = Time.time;
@@ -126,9 +134,18 @@ public class PlayerMovement : MonoBehaviour
 
         if (Time.time - lastGroundedTime <= jumpButtonGracePeriod)//checks if character has been grounded recently
         {
-            ySpeed = -0.5f;//its set to -.5 b/c for some reason setting it to 0 makes the player stick to the ground and sometime wont jump when you tell it to
+            if(slopeSlideVelocity != Vector3.zero)
+            {
+                isSliding = true;
+            }
 
-            if (Time.time - jumpButtonPressedTime <= jumpButtonGracePeriod)//checks if jump button has been pressed recently
+            if(isSliding == false)
+            {
+                ySpeed = -0.5f;//its set to -.5 b/c for some reason setting it to 0 makes the player stick to the ground and sometime wont jump when you tell it to
+
+            }
+
+            if (Time.time - jumpButtonPressedTime <= jumpButtonGracePeriod && isSliding == false)//checks if jump button has been pressed recently
             {
                 //characterController.stepOffset = originalstepOffset;//for a unity controller bug
                 if(animator != null)
@@ -144,13 +161,7 @@ public class PlayerMovement : MonoBehaviour
         //{
         //    characterController.stepOffset = 0;//for a unity controller bug
         //}
-
-        //player velocity (adding player movement with jumping into Vector3 velocity)
-        Vector3 velocity = movementDirection * speed;
-        velocity.y = ySpeed;
-
-        characterController.Move(velocity * Time.deltaTime);//NOTE: dont need to multiply by deltaTime b/c its already accounted for in the SimpleMove method
-
+        
         ////player movement rotation
         if(movementDirection != Vector3.zero)//checks if player is moving
         {
@@ -174,6 +185,50 @@ public class PlayerMovement : MonoBehaviour
                 animator.SetBool("Running", false);
             }
         }
+
+        //player velocity (adding player movement with jumping into Vector3 velocity)
+        if (isSliding == false)
+        {
+            Vector3 velocity = movementDirection * speed;
+            velocity.y = ySpeed;
+
+            characterController.Move(velocity * Time.deltaTime);//NOTE: dont need to multiply by deltaTime b/c its already accounted for in the SimpleMove method
+
+        }
+
+        if (isSliding)//sliding physics gets executed
+        {
+            Vector3 velocity = slopeSlideVelocity;
+            velocity.y = ySpeed;
+
+            characterController.Move(velocity * Time.deltaTime);
+        }
+
+    }
+
+    private void SetSlopeSlideVelocity()
+    {
+        if(Physics.Raycast(transform.position + Vector3.up, Vector3.down, out RaycastHit hitInfo, 5)){
+            float angle = Vector3.Angle(hitInfo.normal, Vector3.up);
+
+            if(angle >= characterController.slopeLimit)
+            {
+                slopeSlideVelocity = Vector3.ProjectOnPlane(new Vector3(0,ySpeed,0), hitInfo.normal);
+                return;
+            }
+        }
+
+        if (isSliding)
+        {
+            slopeSlideVelocity -= slopeSlideVelocity * Time.deltaTime * 6;
+
+            if(slopeSlideVelocity.magnitude > 1)
+            {
+                return;
+            }
+        }
+
+        slopeSlideVelocity = Vector3.zero;
     }
 
     private void OnApplicationFocus(bool focus)
